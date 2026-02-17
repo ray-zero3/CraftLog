@@ -1,0 +1,149 @@
+{
+  "name": "craftlog",
+  "displayName": "CraftLog",
+  "description": "プログラマーの制作過程を同一時間軸のログとして記録するVSCode拡張",
+  "version": "0.1.0",
+  "publisher": "craftlog",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "craftlog.startSession",
+        "title": "CraftLog: Start Session"
+      },
+      {
+        "command": "craftlog.stopSession",
+        "title": "CraftLog: Stop Session"
+      },
+      {
+        "command": "craftlog.toggleLogging",
+        "title": "CraftLog: Toggle Logging"
+      },
+      {
+        "command": "craftlog.markAIPrompt",
+        "title": "CraftLog: Mark AI Prompt..."
+      },
+      {
+        "command": "craftlog.addNote",
+        "title": "CraftLog: Add Note..."
+      },
+      {
+        "command": "craftlog.pauseSession",
+        "title": "CraftLog: Pause Session"
+      },
+      {
+        "command": "craftlog.resumeSession",
+        "title": "CraftLog: Resume Session"
+      }
+    ],
+    "configuration": {
+      "title": "CraftLog",
+      "properties": {
+        "craftlog.storePromptText": {
+          "type": "boolean",
+          "default": false,
+          "description": "AIプロンプトの本文を保存するかどうか"
+        },
+        "craftlog.logDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "ログ保存先ディレクトリ（空の場合はワークスペース内の.craftlog）"
+        },
+        "craftlog.snapshotIntervalMs": {
+          "type": "number",
+          "default": 10000,
+          "description": "スナップショット記録の間隔（ミリ秒）"
+        },
+        "craftlog.pasteLikeThreshold": {
+          "type": "number",
+          "default": 80,
+          "description": "paste判定の閾値（追加文字数）"
+        },
+        "craftlog.excludePatterns": {
+          "type": "array",
+          "default": [
+            "**/.env",
+            "**/.env.*",
+            "**/secrets.*",
+            "**/*.pem",
+            "**/id_rsa",
+            "**/id_rsa.*",
+            "**/*.key",
+            "**/keychain",
+            "**/node_modules/**",
+            "**/.git/**"
+          ],
+          "description": "ログ対象から除外するglobパターン"
+        },
+        "craftlog.targetExtensions": {
+          "type": "array",
+          "default": [
+            "js",
+            "ts",
+            "jsx",
+            "tsx",
+            "py",
+            "cpp",
+            "c",
+            "h",
+            "hpp",
+            "java",
+            "go",
+            "rs",
+            "rb",
+            "php",
+            "swift",
+            "kt",
+            "scala",
+            "cs",
+            "vue",
+            "svelte",
+            "html",
+            "css",
+            "scss",
+            "less",
+            "json",
+            "yaml",
+            "yml",
+            "md",
+            "sql",
+            "vs",
+            "fs",
+            "vert",
+            "frag"
+          ],
+          "description": "スナップショットのLOC計測対象の拡張子"
+        },
+        "craftlog.maxFileSizeMB": {
+          "type": "number",
+          "default": 50,
+          "description": "ログファイルの最大サイズ（MB）"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0"
+  }
+}
