@@ -1,24 +1,68 @@
 # CraftLog
 
-プログラマーの制作過程を同一時間軸のログとして記録するVSCode拡張機能です。
+A VSCode extension that records the programming process as a unified timeline log.
 
-## 概要
+## Overview
 
-CraftLogは、コーディング作業中の編集差分、AIへの依頼タイミング、ワークスペースの状態変化を記録し、後から時間軸上に可視化できるようにするためのツールです。
+CraftLog captures code edits, AI prompt timings, and workspace state changes during your coding sessions, enabling later visualization and analysis on a timeline.
 
-### 記録対象
+### What It Records
 
-1. **コード編集イベント** - ドキュメントの差分（追加/削除された文字数・行数）
-2. **AIプロンプト送信イベント** - AIへの依頼タイミングと内容（オプション）
-3. **スナップショット** - ワークスペースの総LOC、ファイル数などの状態
+1. **Code Edit Events** - Document diffs (added/deleted characters and lines)
+2. **AI Prompt Events** - When you request AI assistance and (optionally) the prompt content
+3. **Snapshots** - Workspace state including total LOC, file count, etc.
+4. **File Operations** - File creation and deletion events
+5. **Workspace Diffs** - Changes detected from external tools (git checkout, npm install, etc.)
+6. **Control Mode Changes** - Transitions between Human and AI editing modes
 
-### 記録しないもの
+### What It Does NOT Record
 
-- OSレベルのキーログ
-- パスワード等センシティブな入力の全キャプチャ
-- Copilot内部の非公開イベント
+- OS-level keylogging
+- Full capture of sensitive inputs like passwords
+- Copilot's internal non-public events
 
-## インストール
+## Key Feature: Control Mode (Human/AI Mode)
+
+CraftLog introduces a **Control Mode** system to clearly distinguish between human edits and AI-assisted edits.
+
+### How It Works
+
+- **Human Mode** (default): All edits are recorded as human-originated
+- **AI Mode**: All edits are recorded as AI-originated
+
+Every `edit` event includes an `origin_mode` field indicating whether the edit occurred during Human or AI mode.
+
+### Automatic Mode Switching
+
+When you execute `CraftLog: Mark AI Prompt...`, the extension automatically switches to AI Mode. This ensures that subsequent AI-generated edits are correctly attributed.
+
+### Manual Mode Control
+
+| Command | Description |
+|---------|-------------|
+| `CraftLog: Set Human Mode` | Switch to Human Mode |
+| `CraftLog: Set AI Mode` | Switch to AI Mode |
+| `CraftLog: Toggle Mode (Human/AI)` | Toggle between modes |
+
+### Visual Indicators
+
+When in **AI Mode**:
+- **Status Bar**: Shows `$(hubot) CraftLog: AI` with highlighted background
+- **Editor Overlay**: A subtle purple tint is applied to all open editors
+- **CodeLens Button**: A "Return to Human Mode" button appears at the top of each file
+
+Click the status bar or the CodeLens button to return to Human Mode.
+
+### Policy Violation Detection
+
+If an AI prompt is executed while in Human Mode, CraftLog will:
+1. Log a `policy_violation` event for auditing
+2. Show a warning message
+3. Automatically switch to AI Mode
+
+## Installation
+
+### Development Mode
 
 ```bash
 cd logggggggg
@@ -26,62 +70,113 @@ npm install
 npm run compile
 ```
 
-その後、VSCodeで「Run Extension」(F5)でデバッグ実行できます。
+Then run "Run Extension" (F5) in VSCode to launch in debug mode.
 
-## 使い方
+### Building VSIX Package
 
-### コマンド
+To create a distributable `.vsix` file:
 
-| コマンド | 説明 |
-|----------|------|
-| `CraftLog: Start Session` | ログセッションを開始 |
-| `CraftLog: Stop Session` | ログセッションを完全終了 |
-| `CraftLog: Pause Session` | ログセッションを一時停止（後日再開可能） |
-| `CraftLog: Resume Session` | 一時停止したセッションを再開 |
-| `CraftLog: Toggle Logging` | ログ記録のON/OFF切り替え |
-| `CraftLog: Mark AI Prompt...` | AIへの依頼をマーク |
-| `CraftLog: Add Note...` | メモを追加 |
+1. **Install vsce** (Visual Studio Code Extension Manager):
+   ```bash
+   npm install -g @vscode/vsce
+   ```
 
-### ステータスバー
+2. **Build the extension**:
+   ```bash
+   npm run compile
+   ```
 
-- `$(record) CraftLog: セッションID` - ログ記録中（クリックで一時停止）
-- `$(debug-pause) CraftLog: セッションID` - 一時停止中（クリックで再開）
-- `$(history) CraftLog: 再開可能` - 再開可能なセッションあり
-- `$(circle-outline) CraftLog: OFF` - ログ停止中（クリックで開始）
+3. **Package into VSIX**:
+   ```bash
+   vsce package
+   ```
 
-### 一時停止と再開
+   This creates a file like `craftlog-0.1.0.vsix` in the project root.
 
-セッションを一時停止すると、同じセッションIDを維持したまま後日再開できます。
+### Installing VSIX in VSCode
 
-- **一時停止**: `CraftLog: Pause Session` または記録中にステータスバーをクリック
-- **再開**: `CraftLog: Resume Session` または一時停止中にステータスバーをクリック
-- **VSCode終了時**: セッションが進行中の場合、自動的に一時停止として保存されます
+**Method 1: Via Command Palette**
+1. Open VSCode
+2. Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
+3. Type "Extensions: Install from VSIX..."
+4. Select the `.vsix` file
 
-これにより、複数日にまたがる制作過程を1つのセッションとして記録できます。
+**Method 2: Via Extensions Sidebar**
+1. Open Extensions sidebar (`Cmd+Shift+X` / `Ctrl+Shift+X`)
+2. Click the `...` menu (top-right of sidebar)
+3. Select "Install from VSIX..."
+4. Select the `.vsix` file
 
-## 設定
+**Method 3: Via Command Line**
+```bash
+code --install-extension craftlog-0.1.0.vsix
+```
 
-| 設定 | 説明 | デフォルト |
-|------|------|-----------|
-| `craftlog.storePromptText` | AIプロンプトの本文を保存するか | `false` |
-| `craftlog.logDirectory` | ログ保存先ディレクトリ | ワークスペース内 `.craftlog` |
-| `craftlog.snapshotIntervalMs` | スナップショット間隔（ミリ秒） | `10000` |
-| `craftlog.pasteLikeThreshold` | paste判定の閾値（文字数） | `80` |
-| `craftlog.excludePatterns` | 除外するglobパターン | `.env`, `secrets.*`, `*.pem` 等 |
-| `craftlog.targetExtensions` | LOC計測対象の拡張子 | `js`, `ts`, `py`, `cpp` 等 |
-| `craftlog.maxFileSizeMB` | ログファイルの最大サイズ（MB） | `50` |
+After installation, reload VSCode and CraftLog will be available.
 
-## ログ形式
+## Usage
 
-JSON Lines（.jsonl）形式で保存されます。1行=1イベント。
+### Commands
 
-### イベント種別
+| Command | Description |
+|---------|-------------|
+| `CraftLog: Start Session` | Start a logging session |
+| `CraftLog: Stop Session` | Stop and finalize the session |
+| `CraftLog: Pause Session` | Pause session (can resume later) |
+| `CraftLog: Resume Session` | Resume a paused session |
+| `CraftLog: Toggle Logging` | Toggle logging ON/OFF |
+| `CraftLog: Mark AI Prompt...` | Mark an AI prompt (auto-switches to AI Mode) |
+| `CraftLog: Add Note...` | Add a note to the log |
+| `CraftLog: Set Human Mode` | Switch to Human Mode |
+| `CraftLog: Set AI Mode` | Switch to AI Mode |
+| `CraftLog: Toggle Mode (Human/AI)` | Toggle between Human and AI modes |
 
-#### edit - コード編集
+### Status Bar
+
+**Session Status (right side):**
+- `$(record) CraftLog: <session_id>` - Recording (click to pause)
+- `$(debug-pause) CraftLog: <session_id>` - Paused (click to resume)
+- `$(history) CraftLog: Resumable` - A paused session is available
+- `$(circle-outline) CraftLog: OFF` - Not recording (click to start)
+
+**Mode Status (next to session status):**
+- `$(person) CraftLog: HUMAN` - Human Mode (click to toggle)
+- `$(hubot) CraftLog: AI` - AI Mode (click to toggle)
+
+### Pause and Resume
+
+Sessions can be paused and resumed later while maintaining the same session ID:
+
+- **Pause**: `CraftLog: Pause Session` or click the status bar while recording
+- **Resume**: `CraftLog: Resume Session` or click the status bar while paused
+- **VSCode Exit**: Active sessions are automatically paused and saved
+
+This allows recording multi-day projects as a single session.
+
+## Configuration
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `craftlog.storePromptText` | Store AI prompt text content | `false` |
+| `craftlog.logDirectory` | Log file directory | `.craftlog` in workspace |
+| `craftlog.snapshotIntervalMs` | Snapshot interval (ms) | `10000` |
+| `craftlog.pasteLikeThreshold` | Paste detection threshold (chars) | `80` |
+| `craftlog.excludePatterns` | Glob patterns to exclude | `.env`, `secrets.*`, `*.pem`, etc. |
+| `craftlog.targetExtensions` | File extensions for LOC counting | `js`, `ts`, `py`, `cpp`, etc. |
+| `craftlog.maxFileSizeMB` | Max log file size (MB) | `50` |
+
+## Log Format
+
+Logs are saved in JSON Lines (.jsonl) format. Each line is one event.
+
+### Event Types
+
+#### edit - Code Edit
 
 ```json
 {
   "ts": 1739830002201,
+  "elapsed_ms": 5000,
   "session_id": "S_2026-02-18_001",
   "workspace_id": "W_ab12",
   "event": "edit",
@@ -100,15 +195,17 @@ JSON Lines（.jsonl）形式で保存されます。1行=1イベント。
     "is_paste_like": true,
     "is_undo_like": false,
     "is_redo_like": false
-  }
+  },
+  "origin_mode": "ai"
 }
 ```
 
-#### ai_prompt - AIへの依頼
+#### ai_prompt - AI Request
 
 ```json
 {
   "ts": 1739830000123,
+  "elapsed_ms": 3000,
   "session_id": "S_2026-02-18_001",
   "workspace_id": "W_ab12",
   "event": "ai_prompt",
@@ -122,11 +219,12 @@ JSON Lines（.jsonl）形式で保存されます。1行=1イベント。
 }
 ```
 
-#### snapshot - ワークスペース状態
+#### snapshot - Workspace State
 
 ```json
 {
   "ts": 1739830005000,
+  "elapsed_ms": 8000,
   "session_id": "S_2026-02-18_001",
   "workspace_id": "W_ab12",
   "event": "snapshot",
@@ -142,11 +240,46 @@ JSON Lines（.jsonl）形式で保存されます。1行=1イベント。
 }
 ```
 
-#### file_create - ファイル作成
+#### mode_change - Control Mode Change
+
+```json
+{
+  "ts": 1739830006000,
+  "elapsed_ms": 9000,
+  "session_id": "S_2026-02-18_001",
+  "workspace_id": "W_ab12",
+  "event": "mode_change",
+  "from": "human",
+  "to": "ai",
+  "reason": "ai_prompt"
+}
+```
+
+**reason values:**
+- `"manual"` - User manually switched modes via command
+- `"ai_prompt"` - Automatically switched when ai_prompt was executed
+
+#### policy_violation - Policy Violation
+
+```json
+{
+  "ts": 1739830007000,
+  "elapsed_ms": 10000,
+  "session_id": "S_2026-02-18_001",
+  "workspace_id": "W_ab12",
+  "event": "policy_violation",
+  "kind": "ai_action_in_human_mode",
+  "control_mode": "human",
+  "detail": "ai_prompt executed while in human mode (mode: agent)"
+}
+```
+
+#### file_create - File Creation
 
 ```json
 {
   "ts": 1739830010000,
+  "elapsed_ms": 13000,
   "session_id": "S_2026-02-18_001",
   "workspace_id": "W_ab12",
   "event": "file_create",
@@ -162,11 +295,12 @@ JSON Lines（.jsonl）形式で保存されます。1行=1イベント。
 }
 ```
 
-#### file_delete - ファイル削除
+#### file_delete - File Deletion
 
 ```json
 {
   "ts": 1739830015000,
+  "elapsed_ms": 18000,
   "session_id": "S_2026-02-18_001",
   "workspace_id": "W_ab12",
   "event": "file_delete",
@@ -182,13 +316,14 @@ JSON Lines（.jsonl）形式で保存されます。1行=1イベント。
 }
 ```
 
-#### workspace_diff - ワークスペース差分
+#### workspace_diff - Workspace Diff
 
-snapshot毎に前回との差分を記録。外部からのファイル追加（git checkout、npm installなど）を検知できます。
+Records differences between snapshots. Detects external file additions (git checkout, npm install, etc.).
 
 ```json
 {
   "ts": 1739830020000,
+  "elapsed_ms": 23000,
   "session_id": "S_2026-02-18_001",
   "workspace_id": "W_ab12",
   "event": "workspace_diff",
@@ -203,13 +338,36 @@ snapshot毎に前回との差分を記録。外部からのファイル追加（
 }
 ```
 
-## プライバシー・安全設計
+#### Session Events
 
-- **外部送信なし**: ネットワークアクセスを実装していません
-- **ファイルパス**: workspace相対パスのみ記録（絶対パスは記録しない）
-- **プロンプト本文**: デフォルトでは保存しない（length+hashのみ）
-- **除外パターン**: `.env`, `secrets.*`, `*.pem` 等はデフォルトで除外
+- `session_start` - Session started
+- `session_end` - Session ended
+- `session_pause` - Session paused
+- `session_resume` - Session resumed
+- `note` - User-added note
 
-## ライセンス
+## Privacy & Safety Design
+
+- **No External Transmission**: No network access is implemented
+- **File Paths**: Only workspace-relative paths are recorded (no absolute paths)
+- **Prompt Content**: Not stored by default (only length + hash)
+- **Exclusion Patterns**: `.env`, `secrets.*`, `*.pem`, etc. are excluded by default
+
+## Technical Notes
+
+### VSCode API Limitations
+
+Some features have limitations due to VSCode API constraints:
+
+- **Copilot Command Suppression**: VSCode does not allow overriding or canceling commands registered by other extensions. Full suppression of Copilot commands in Human Mode is not possible.
+- **Paste Command Cancellation**: The built-in `editor.action.clipboardPasteAction` cannot be intercepted or canceled.
+- **Editor Overlay**: Full modal overlays are not possible. The AI Mode visual indicator uses decoration API and CodeLens as alternatives.
+
+### Alternative Implementations
+
+- AI prompt execution in Human Mode triggers a `policy_violation` event and warning before auto-switching to AI Mode
+- Paste-like edits are detected via `pasteLikeThreshold` and flagged in the `flags.is_paste_like` field
+
+## License
 
 MIT
