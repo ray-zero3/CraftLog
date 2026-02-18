@@ -65,7 +65,7 @@ If an AI prompt is executed while in Human Mode, CraftLog will:
 ### Development Mode
 
 ```bash
-cd logggggggg
+cd /[path_to_your_project]/CraftLog
 npm install
 npm run compile
 ```
