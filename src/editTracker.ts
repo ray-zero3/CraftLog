@@ -8,6 +8,7 @@ import * as path from 'path';
 import { EditEvent, CraftLogConfig, SessionState, DeltaInfo, EditFlags, FileInfo } from './types';
 import { LogWriter } from './logWriter';
 import { minimatch } from './minimatch';
+import { calculateElapsedMs } from './extension';
 
 export class EditTracker implements vscode.Disposable {
   private disposables: vscode.Disposable[] = [];
@@ -85,6 +86,7 @@ export class EditTracker implements vscode.Disposable {
     // イベントを構築
     const editEvent: EditEvent = {
       ts: Date.now(),
+      elapsed_ms: calculateElapsedMs(),
       session_id: this.sessionState.sessionId,
       workspace_id: this.sessionState.workspaceId,
       event: 'edit',
@@ -93,7 +95,8 @@ export class EditTracker implements vscode.Disposable {
       delta,
       flags,
       cursor,
-      change_count: event.contentChanges.length
+      change_count: event.contentChanges.length,
+      origin_mode: this.sessionState.controlMode  // 編集時点のcontrol_modeを記録
     };
 
     // ログに書き込み

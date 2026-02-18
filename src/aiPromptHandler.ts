@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import { AIPromptEvent, CraftLogConfig, SessionState, PromptInfo } from './types';
 import { LogWriter, hashString } from './logWriter';
+import { calculateElapsedMs, getControlMode, setControlMode, logPolicyViolation } from './extension';
 
 export type AIMode = 'copilot_chat' | 'agent' | 'copilot_inline' | 'unknown';
 
@@ -161,9 +162,28 @@ export class AIPromptHandler {
 
   /**
    * プロンプトイベントをログに記録
+   * ai_promptが発生した時点で自動的にAIモードへ切り替える
    */
   public async logPrompt(options: AIPromptOptions): Promise<void> {
     const { mode = 'unknown', note = '', promptText = '' } = options;
+
+    // Humanモード中にai_promptが発生した場合の処理
+    const currentControlMode = getControlMode();
+    if (currentControlMode === 'human') {
+      // policy_violationを記録（警告）
+      logPolicyViolation(
+        'ai_action_in_human_mode',
+        `ai_prompt executed while in human mode (mode: ${mode})`
+      );
+
+      // 警告を表示
+      vscode.window.showWarningMessage(
+        'CraftLog: HumanモードでAIプロンプトが実行されました。AIモードに自動切替します。'
+      );
+    }
+
+    // AIモードに自動切替（既にAIモードの場合は何もしない）
+    setControlMode('ai', 'ai_prompt');
 
     // プロンプト情報を構築
     const promptInfo: PromptInfo = {
@@ -180,6 +200,7 @@ export class AIPromptHandler {
     // イベントを構築
     const event: AIPromptEvent = {
       ts: Date.now(),
+      elapsed_ms: calculateElapsedMs(),
       session_id: this.sessionState.sessionId,
       workspace_id: this.sessionState.workspaceId,
       event: 'ai_prompt',

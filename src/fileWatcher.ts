@@ -9,6 +9,7 @@ import * as path from 'path';
 import { FileCreateEvent, FileDeleteEvent, CraftLogConfig, SessionState, FileInfo } from './types';
 import { LogWriter } from './logWriter';
 import { minimatch } from './minimatch';
+import { calculateElapsedMs } from './extension';
 
 export class FileWatcher implements vscode.Disposable {
   private config: CraftLogConfig;
@@ -100,6 +101,7 @@ export class FileWatcher implements vscode.Disposable {
 
     const event: FileCreateEvent = {
       ts: Date.now(),
+      elapsed_ms: calculateElapsedMs(),
       session_id: this.sessionState.sessionId,
       workspace_id: this.sessionState.workspaceId,
       event: 'file_create',
@@ -152,6 +154,7 @@ export class FileWatcher implements vscode.Disposable {
 
     const event: FileDeleteEvent = {
       ts: Date.now(),
+      elapsed_ms: calculateElapsedMs(),
       session_id: this.sessionState.sessionId,
       workspace_id: this.sessionState.workspaceId,
       event: 'file_delete',

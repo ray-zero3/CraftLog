@@ -9,6 +9,7 @@ import * as path from 'path';
 import { SnapshotEvent, WorkspaceDiffEvent, CraftLogConfig, SessionState, WorkspaceInfo, GitInfo } from './types';
 import { LogWriter } from './logWriter';
 import { minimatch } from './minimatch';
+import { calculateElapsedMs } from './extension';
 
 // 個別ファイルの統計
 interface SingleFileStats {
@@ -91,6 +92,7 @@ export class SnapshotHandler implements vscode.Disposable {
       // snapshot イベントを出力
       const snapshotEvent: SnapshotEvent = {
         ts: Date.now(),
+        elapsed_ms: calculateElapsedMs(),
         session_id: this.sessionState.sessionId,
         workspace_id: this.sessionState.workspaceId,
         event: 'snapshot',
@@ -171,6 +173,7 @@ export class SnapshotHandler implements vscode.Disposable {
         addedLoc > 0 || removedLoc > 0 || addedBytes > 0 || removedBytes > 0) {
       const diffEvent: WorkspaceDiffEvent = {
         ts: Date.now(),
+        elapsed_ms: calculateElapsedMs(),
         session_id: this.sessionState.sessionId,
         workspace_id: this.sessionState.workspaceId,
         event: 'workspace_diff',

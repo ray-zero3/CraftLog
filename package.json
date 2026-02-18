@@ -43,6 +43,18 @@
       {
         "command": "craftlog.resumeSession",
         "title": "CraftLog: Resume Session"
+      },
+      {
+        "command": "craftlog.setHumanMode",
+        "title": "CraftLog: Set Human Mode"
+      },
+      {
+        "command": "craftlog.setAIMode",
+        "title": "CraftLog: Set AI Mode"
+      },
+      {
+        "command": "craftlog.toggleMode",
+        "title": "CraftLog: Toggle Mode (Human/AI)"
       }
     ],
     "configuration": {

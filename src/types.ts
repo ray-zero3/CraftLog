@@ -2,9 +2,16 @@
  * CraftLog イベント型定義
  */
 
+// Control Mode（制御モード）: Human vs AI
+export type ControlMode = 'human' | 'ai';
+
+// モード変更理由
+export type ModeChangeReason = 'manual' | 'ai_prompt';
+
 // 共通ヘッダー（全イベント必須）
 export interface EventHeader {
-  ts: number;                    // UNIX epoch ms
+  ts: number;                    // UNIX epoch ms（絶対時刻）
+  elapsed_ms: number;            // セッション開始からの経過時間（一時停止中は除外）
   session_id: string;            // 制作セッションID
   workspace_id: string;          // ワークスペース識別（パスをハッシュ化）
   event: EventType;              // イベント種別
@@ -12,7 +19,7 @@ export interface EventHeader {
   ext_version?: string;          // 任意
 }
 
-export type EventType = 'edit' | 'ai_prompt' | 'snapshot' | 'note' | 'session_start' | 'session_end' | 'session_pause' | 'session_resume' | 'file_create' | 'file_delete' | 'workspace_diff';
+export type EventType = 'edit' | 'ai_prompt' | 'snapshot' | 'note' | 'session_start' | 'session_end' | 'session_pause' | 'session_resume' | 'file_create' | 'file_delete' | 'workspace_diff' | 'mode_change' | 'policy_violation';
 
 // ファイル情報
 export interface FileInfo {
@@ -50,6 +57,7 @@ export interface EditEvent extends EventHeader {
   flags: EditFlags;
   cursor?: CursorPosition;       // 任意
   change_count?: number;         // 任意
+  origin_mode: ControlMode;      // 編集が行われた時点のcontrol_mode
 }
 
 // プロンプト情報
@@ -147,6 +155,22 @@ export interface WorkspaceDiffEvent extends EventHeader {
   removed_paths: string[];
 }
 
+// mode_change イベント
+export interface ModeChangeEvent extends EventHeader {
+  event: 'mode_change';
+  from: ControlMode;
+  to: ControlMode;
+  reason: ModeChangeReason;
+}
+
+// policy_violation イベント
+export interface PolicyViolationEvent extends EventHeader {
+  event: 'policy_violation';
+  kind: string;                  // 例: 'ai_action_in_human_mode'
+  control_mode: ControlMode;
+  detail: string;
+}
+
 // 全イベント型
 export type CraftLogEvent =
   | EditEvent
@@ -159,7 +183,9 @@ export type CraftLogEvent =
   | SessionResumeEvent
   | FileCreateEvent
   | FileDeleteEvent
-  | WorkspaceDiffEvent;
+  | WorkspaceDiffEvent
+  | ModeChangeEvent
+  | PolicyViolationEvent;
 
 // 設定
 export interface CraftLogConfig {
@@ -179,7 +205,10 @@ export interface SessionState {
   isLogging: boolean;
   isPaused: boolean;
   logFilePath: string;
-  startTime: number;
+  startTime: number;             // セッション開始時刻（絶対時刻）
+  totalPausedMs: number;         // 累積一時停止時間（ミリ秒）
+  lastPauseTime: number | null;  // 最後に一時停止した時刻（null=一時停止中でない）
+  controlMode: ControlMode;      // 現在の制御モード（human または ai）
 }
 
 // 永続化用のセッション情報
@@ -189,4 +218,6 @@ export interface SavedSessionInfo {
   logFilePath: string;
   startTime: number;
   pausedAt: number;
+  totalPausedMs: number;         // 累積一時停止時間（ミリ秒）
+  controlMode: ControlMode;      // 一時停止時の制御モード
 }
